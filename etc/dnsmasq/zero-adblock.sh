@@ -1,33 +1,41 @@
 #!/bin/bash
 
-TEMP="/tmp/adblock.lst"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+WORKING_DIR="/run/dnsmasq"
+TEMP="$WORKING_DIR/adblock.lst"
 ADDN_HOSTS="/etc/dnsmasq/adblock.uniq"
-PREFIX="0.0.0.0"
-URL_LIST="http://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext http://winhelp2002.mvps.org/hosts.txt http://adaway.org/hosts.txt http://hosts-file.net/ad_servers.txt http://www.malwaredomainlist.com/hostslist/hosts.txt http://adblock.gjtech.net/?format=unix-hosts http://hphosts.gt500.org/hosts.zip http://www.securemecca.com/Downloads/hosts.txt http://someonewhocares.org/hosts/hosts"
+HOSTS_PREFIX="0.0.0.0"
+FILE_URL_LIST="$DIR/ads.url"
 
+  # remove if file/folder exist
+  [ -d $WORKING_DIR ] && rm -rf $WORKING_DIR
 
-  # remove if file exist
-  [ -e $TEMP ] && rm -rf $TEMP
-
-  # re-creating file
+  # re-creating folder and file
+  mkdir -p $WORKING_DIR
   touch $TEMP
 
   echo -e "\nDownloading and processing URLs..."
-  for url in ${URL_LIST[@]}; do
-    echo $url
-    if test ${url##*.} = "zip"
+  while read url_list
+  do
+    # Break read line into array
+    hostsfile=($url_list)
+    echo -e $hostsfile
+    if [ ${hostsfile[0]##*.} == "zip" ] #Download, unzip if the URL ended with ZIP
     then
-      echo -e "Processing ${url##*/}..."
-      curl -s -o /tmp/${url##*/} $url
-      # Hard-coded filename -- will figure out the way to handle it in flexible way
-      unzip -p /tmp/${url##*/} hosts.txt | grep "^127.0.0.1\|^0.0.0.0" | awk '{ print $2 }' >> $TEMP
+      curl -s -o $WORKING_DIR\/${hostsfile[$i]##*/} ${hostsfile[0]}
+      for (( i=1; i<${#hostsfile[@]}; i++ ));
+      do
+        echo -e "  Processing ${hostsfile[0]##*/}\\${hostsfile[$i]}"
+        unzip -p $WORKING_DIR\/${hostsfile[0]##*/} ${hostsfile[$i]} | grep "^127.0.0.1\|^0.0.0.0" | awk '{ print $2 }' >> $TEMP
+      done
     else
-      curl -s $url | grep "^127.0.0.1\|^0.0.0.0" | awk '{ print $2 }' >> $TEMP
+      curl -s $hostsfile | grep "^127.0.0.1\|^0.0.0.0" | awk '{ print $2 }' >> $TEMP 
     fi
-  done
+    
+  done < $FILE_URL_LIST
 
   echo -e "\nTrimming, sorting the aggregated results and remove any duplicates..."
-  cat $TEMP | grep -v "localhost" | sed -e 's/^[ \t]*//' | awk '{ print pre "\t" $0 }' pre=$PREFIX | tr -d '\r' | sort -f --buffer-size=16M | uniq > $ADDN_HOSTS
+  cat $TEMP | grep -v "localhost" | sed -e 's/^[ \t]*//' | awk '{ print pre "\t" $0 }' pre=$HOSTS_PREFIX | tr -d '\r' | sort -f --buffer-size=16M | uniq > $ADDN_HOSTS
   echo -e "Total lines:" `wc -l $ADDN_HOSTS`
 
   # Restart DNS
