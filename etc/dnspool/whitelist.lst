@@ -1,4 +1,5 @@
 # Google DNS
 # 8.8.8.8, 8.8.4.4
 
-server=/bit.ly/8.8.8.8
+8.8.8.8	bit.ly
+
