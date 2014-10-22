@@ -1,9 +1,9 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-WORKING_DIR="/run/dnsmasq"
+WORKING_DIR="/run/dnspool"
 TEMP="$WORKING_DIR/adblock.lst"
-ADDN_HOSTS="/etc/dnsmasq/adblock.uniq"
+ADDN_HOSTS="/etc/dnspool/adblock.uniq"
 HOSTS_PREFIX="0.0.0.0"
 FILE_URL_LIST="$DIR/ads.url"
 
