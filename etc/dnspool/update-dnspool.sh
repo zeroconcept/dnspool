@@ -34,8 +34,9 @@ FILE_URL_LIST="$DIR/ads.url"
     
   done < $FILE_URL_LIST
 
-  #There might be a situtation where it's hard to standardize the hostname with scripts, thus custom job goes here
+  #There might be a situation where it's hard to standardize the hostname with scripts, thus custom job goes here
   #---------------------------------------------------------------------------------------------------------------
+  echo -e "\nCustom list section"
   ADULT_LIST="ftp://ftp.ut-capitole.fr/pub/reseau/cache/squidguard_contrib/adult.tar.gz"
   echo -e $ADULT_LIST
   curl -s -o $WORKING_DIR\/${ADULT_LIST[0]##*/} $ADULT_LIST 
@@ -51,4 +52,8 @@ FILE_URL_LIST="$DIR/ads.url"
 
   # Restart DNS
   service dnsmasq restart
+
+  # remove if file/folder exist
+  echo -e "\nCleaning up..."
+  [ -d $WORKING_DIR ] && rm -rf $WORKING_DIR
 
